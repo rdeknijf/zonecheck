@@ -1,0 +1,19 @@
+[
+    {
+        "kenteken": "G313XB",
+        "brandstof_volgnummer": "1",
+        "brandstof_omschrijving": "Diesel",
+        "brandstofverbruik_gecombineerd": "4.40",
+        "co2_uitstoot_gecombineerd": "117",
+        "geluidsniveau_rijdend": "71",
+        "geluidsniveau_stationair": "80",
+        "emissiecode_omschrijving": "6",
+        "milieuklasse_eg_goedkeuring_licht": "715/2007*2018/1832AP",
+        "nettomaximumvermogen": "118.00",
+        "toerental_geluidsniveau": "2850",
+        "emis_deeltjes_type1_wltp": "0.30",
+        "emissie_co2_gecombineerd_wltp": "136",
+        "brandstof_verbruik_gecombineerd_wltp": "5.200",
+        "uitlaatemissieniveau": "EURO 6 AP"
+    }
+]

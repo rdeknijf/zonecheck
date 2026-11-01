@@ -1,0 +1,15 @@
+[
+    {
+        "kenteken": "2XNN77",
+        "brandstof_volgnummer": "1",
+        "brandstof_omschrijving": "Benzine",
+        "brandstofverbruik_gecombineerd": "5.40",
+        "co2_uitstoot_gecombineerd": "125",
+        "geluidsniveau_stationair": "79",
+        "emissiecode_omschrijving": "6",
+        "milieuklasse_eg_goedkeuring_licht": "715/2007*630/2012W",
+        "nettomaximumvermogen": "88.00",
+        "toerental_geluidsniveau": "3750",
+        "uitlaatemissieniveau": "EURO 6 W"
+    }
+]

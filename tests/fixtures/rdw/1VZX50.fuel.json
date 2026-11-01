@@ -1,0 +1,20 @@
+[
+    {
+        "kenteken": "1VZX50",
+        "brandstof_volgnummer": "1",
+        "brandstof_omschrijving": "Diesel",
+        "brandstofverbruik_gecombineerd": "4.30",
+        "co2_uitstoot_gecombineerd": "112",
+        "geluidsniveau_rijdend": "72",
+        "geluidsniveau_stationair": "79",
+        "emissiecode_omschrijving": "5",
+        "milieuklasse_eg_goedkeuring_licht": "715/2007*566/2011L",
+        "uitstoot_deeltjes_licht": "0.00021",
+        "nettomaximumvermogen": "55.00",
+        "toerental_geluidsniveau": "3000",
+        "uitlaatemissieniveau": "EURO 5 L",
+        "actieradius_extern_oplaadbaar": "0",
+        "actieradius": "0",
+        "elektriciteitsverbruik_volledig_elektrisch": "0"
+    }
+]

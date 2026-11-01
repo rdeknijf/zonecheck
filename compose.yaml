@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    container_name: ndw-zones-api
+    restart: unless-stopped
+    environment:
+      CACHE_DIR: /data/cache
+    ports:
+      - "127.0.0.1:8011:8000"
+    volumes:
+      - ./data:/data

@@ -1,0 +1,123 @@
+[project]
+name = "ndw-zones"
+version = "0.1.0"
+description = "Can licence plate X enter Dutch low- or zero-emission zone Y? NDW plus RDW open data as a JSON API"
+readme = "README.md"
+authors = [
+    { name = "Rutger de Knijf", email = "rutger@deknijf.com" }
+]
+requires-python = ">=3.15"
+dependencies = [
+    "defusedxml>=0.7.1",
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "pydantic>=2.14.2",
+    "uvicorn>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "prek>=0.5.9",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pytest-socket>=0.8.1",
+    "ruff>=0.17.3",
+    "ty>=0.0.95",
+    "types-defusedxml>=0.7.0.20260504",
+]
+
+# uv checks its own version against this before every command.
+[tool.uv]
+required-version = ">=0.13"
+
+[tool.ruff]
+line-length = 88
+target-version = "py315"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",      # pycodestyle
+    "F",           # pyflakes
+    "I",           # isort
+    "N",           # pep8-naming
+    "UP",          # pyupgrade
+    "B",           # bugbear
+    "A",           # builtins shadow
+    "C4",          # comprehensions
+    "PTH",         # use pathlib, not os.path
+    "SIM",         # simplify
+    "RET",         # return statements
+    "TC",          # type-checking imports
+    "ANN",         # missing annotations
+    "ASYNC",       # async pitfalls
+    "S",           # bandit (security)
+    "FURB",        # refurb
+    "PERF",        # perf anti-patterns
+    "RUF",         # ruff-specific
+]
+ignore = [
+    "ANN401",      # Allow `Any` when it's genuinely needed
+    "S101",        # assert in tests is fine
+]
+
+[tool.ruff.lint.flake8-type-checking]
+# Pydantic and FastAPI read these annotations at runtime.
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN", "S101", "S105", "S106"]
+
+[tool.ty.environment]
+python-version = "3.15"
+python = ".venv"
+
+[tool.ty.src]
+include = ["src", "tests"]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "error"
+possibly-missing-attribute = "error"
+possibly-missing-import = "error"
+unused-ignore-comment = "warn"
+
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["tests"]
+# strict enables strict_config, strict_markers, strict_xfail, and
+# strict_parametrization_ids. An unexpected XPASS fails the run.
+strict = true
+addopts = [
+    "-ra",
+    "--cov",
+    "--cov-report=term-missing",
+    # pytest-socket: block network by default. Unix sockets stay open for the
+    # asyncio event loop. Opt in per test with the enable_socket marker.
+    "--disable-socket",
+    "--allow-unix-socket",
+]
+markers = [
+    "enable_socket: allow network access for this test",
+    "allow_hosts: restrict network access to specific hosts",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 1
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

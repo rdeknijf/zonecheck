@@ -1,0 +1,17 @@
+[
+    {
+        "kenteken": "V68GJD",
+        "brandstof_volgnummer": "1",
+        "brandstof_omschrijving": "Diesel",
+        "co2_uitstoot_gecombineerd": "157",
+        "geluidsniveau_rijdend": "71",
+        "geluidsniveau_stationair": "78",
+        "emissiecode_omschrijving": "6",
+        "milieuklasse_eg_goedkeuring_licht": "715/2007*2018/1832DG",
+        "nettomaximumvermogen": "176.00",
+        "toerental_geluidsniveau": "3150",
+        "emissie_co2_gecombineerd_wltp": "221",
+        "brandstof_verbruik_gecombineerd_wltp": "8.434",
+        "uitlaatemissieniveau": "EURO 6 DG"
+    }
+]

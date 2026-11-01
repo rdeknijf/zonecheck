@@ -1,0 +1,15 @@
+[
+    {
+        "kenteken": "GZS88K",
+        "brandstof_volgnummer": "1",
+        "brandstof_omschrijving": "Elektriciteit",
+        "geluidsniveau_rijdend": "65",
+        "emissiecode_omschrijving": "Z",
+        "milieuklasse_eg_goedkeuring_licht": "715/2007*2018/1832AX",
+        "nominaal_continu_maximumvermogen": "88.00",
+        "elektrisch_verbruik_enkel_elektrisch_wltp": "132.00",
+        "actie_radius_enkel_elektrisch_wltp": "513",
+        "netto_max_vermogen_elektrisch": "208.00",
+        "uitlaatemissieniveau": "AX"
+    }
+]
