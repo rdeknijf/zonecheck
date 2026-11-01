@@ -37,6 +37,8 @@ def test_parser_reads_real_feed_header_and_zones(feed):
         "ZE Rotterdam",
         "ZE Utrecht",
         "ZE Amsterdam",
+        "LEZ Delft",
+        "LEZ Haarlem",
     }
     for zone in feed.zones:
         assert zone.zone_type == "lowEmissionZone"

@@ -277,6 +277,7 @@ def create_app(
                         for leaf in decision.deciding_conditions
                     ],
                     rule_readable=list(decision.rule_readable),
+                    feed_caveat=decision.feed_caveat,
                 )
             )
         overall = min((r.result for r in results), key=_ORDER.__getitem__)

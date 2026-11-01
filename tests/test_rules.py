@@ -5,12 +5,19 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from zonecheck.datex import Characteristic, parse_zone_feed
+from zonecheck.datex import (
+    Characteristic,
+    ConditionSet,
+    Regulation,
+    VehicleCondition,
+    parse_zone_feed,
+)
 from zonecheck.rdw import Fuel, Vehicle
 from zonecheck.rules import (
     decide,
     euro_class,
     evaluate_characteristic,
+    feed_scope_caveat,
     k_and,
     k_not,
     k_or,
@@ -221,6 +228,11 @@ CASES = [
     ("LEZ Breda", "old_diesel_car", "allowed"),
     # Venlo starts 2027-01-01.
     ("Identificatie146223", "euro6_diesel_van", "allowed"),
+    # Feed scope wider than the exemptions (see test_feed_caveat_*).
+    ("LEZ Delft", "euro6_diesel_car", "not_allowed"),
+    ("LEZ Delft", "petrol_car", "allowed"),
+    ("LEZ Haarlem", "euro6_diesel_car", "allowed"),
+    ("LEZ Haarlem", "euro6_diesel_van", "not_allowed"),
 ]
 
 
@@ -349,3 +361,115 @@ def test_unsupported_regulation_type_is_unknown(zones_xml, vehicle, now):
 def test_inactive_zone_is_unknown(zone_by_name, vehicle, now):
     zone = replace(zone_by_name("ZE Utrecht"), status="inactive")
     assert decide(zone, vehicle("petrol_car"), now).result == "unknown"
+
+
+# --- Feed scope caveat -----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("zone", "profile", "result", "category"),
+    [
+        # LEZ Delft exempts only N2/N3 Euro 6, so a Euro 6 diesel car is barred.
+        ("LEZ Delft", "euro6_diesel_car", "not_allowed", "M1"),
+        ("LEZ Delft", "euro6_diesel_van", "not_allowed", "N1"),
+        ("LEZ Delft", "diesel_camper", "unknown", "N1"),
+        # LEZ Haarlem exempts only M Euro 1-6, so every diesel van is barred.
+        ("LEZ Haarlem", "euro6_diesel_van", "not_allowed", "N1"),
+    ],
+)
+def test_feed_caveat_when_no_exemption_names_the_category(
+    zone, profile, result, category, zone_by_name, vehicle, now
+):
+    decision = decide(zone_by_name(zone), vehicle(profile), now)
+    assert decision.result == result
+    assert decision.feed_caveat is not None
+    assert decision.feed_caveat.startswith(
+        "The NDW feed applies this zone to every diesel vehicle, but its "
+        "exemptions only name other vehicle categories"
+    )
+    assert f"not this vehicle's category {category}." in decision.feed_caveat
+    assert "Check the municipality's information." in decision.feed_caveat
+
+
+@pytest.mark.parametrize(
+    ("zone", "profile", "result"),
+    [
+        # Milieuzone Amsterdam's exemptions name M1, so no caveat either way.
+        ("Milieuzone Amsterdam", "euro6_diesel_car", "allowed"),
+        ("Milieuzone Amsterdam", "old_diesel_car", "not_allowed"),
+        # LEZ Utrecht names M (any), which covers M1.
+        ("LEZ Utrecht", "old_diesel_car", "not_allowed"),
+        # Zero-emission zones have an N1/N2/N3 scope, not "any vehicle".
+        ("ZE Utrecht", "diesel_camper", "unknown"),
+        # Allowed results never get the caveat.
+        ("LEZ Haarlem", "euro6_diesel_car", "allowed"),
+        ("LEZ Delft", "petrol_car", "allowed"),
+    ],
+)
+def test_no_feed_caveat(zone, profile, result, zone_by_name, vehicle, now):
+    decision = decide(zone_by_name(zone), vehicle(profile), now)
+    assert decision.result == result
+    assert decision.feed_caveat is None
+
+
+def test_allowed_never_has_a_feed_caveat(feed, plates, vehicle, now):
+    for zone in feed.zones:
+        for profile in plates:
+            decision = decide(zone, vehicle(profile), now)
+            if decision.result == "allowed":
+                assert decision.feed_caveat is None, (zone.name, profile)
+
+
+def test_feed_caveat_does_not_change_the_verdict(feed, plates, vehicle, now):
+    for zone in feed.zones:
+        for profile in plates:
+            car = vehicle(profile)
+            decision = decide(zone, car, now)
+            if car is not None and decision.feed_caveat is not None:
+                assert decision.result in {"not_allowed", "unknown"}
+
+
+@pytest.mark.parametrize(
+    ("category", "expected"),
+    [
+        # RDW category missing or unparseable: "other categories" is unclaimable.
+        (None, False),
+        ("", False),
+        ("M1G", False),
+        # A bare RDW letter counts as named by the feed refinement N2/N3.
+        ("N", False),
+        ("M", True),
+        ("M2", True),
+    ],
+)
+def test_feed_caveat_category_matching(category, expected, zone_by_name, now):
+    car = replace(_vehicle(), europese_voertuigcategorie=category)
+    decision = decide(zone_by_name("LEZ Delft"), car, now)
+    # Unknown when the category decides an exemption; never allowed here.
+    assert decision.result in {"not_allowed", "unknown"}
+    assert (decision.feed_caveat is not None) is expected
+
+
+def test_feed_caveat_needs_named_categories_in_the_exemptions(zone_by_name, now):
+    """Diesel ban whose exemptions name no EU category: no caveat."""
+    scope = VehicleCondition(
+        "scope",
+        False,
+        (
+            Characteristic("fuelType", "diesel"),
+            Characteristic("vehicleType", "anyVehicle"),
+        ),
+        "",
+    )
+    old = VehicleCondition(
+        "old", False, (Characteristic("vehicleAge", "40", "greaterThanOrEqualTo"),), ""
+    )
+    exemptions = ConditionSet("exemptions", "or", True, (old,), "")
+    condition = ConditionSet("top", "and", False, (scope, exemptions), "")
+    zone = replace(
+        zone_by_name("LEZ Delft"),
+        regulations=(Regulation("r", "AccessRestriction", "noEntry", condition),),
+    )
+    car = _vehicle()
+    assert decide(zone, car, now).result == "not_allowed"
+    assert feed_scope_caveat(zone, car, "not_allowed") is None

@@ -17,13 +17,13 @@ AMSTERDAM_LEZ = "NDW11_acbf0f7f-56a6-4b36-9a66-4b6d0c69d474"
 def test_health(client):
     body = client.get("/health").json()
     assert body["status"] == "ok"
-    assert body["zones"] == 9
+    assert body["zones"] == 11
     assert body["feed"]["publication_time"].startswith("2026-10-31T06:00:00")
 
 
 def test_zones(client):
     body = client.get("/zones").json()
-    assert body["count"] == 9
+    assert body["count"] == 11
     zone = next(z for z in body["zones"] if z["id"] == AMSTERDAM_LEZ)
     assert zone == {
         "id": AMSTERDAM_LEZ,
@@ -104,6 +104,21 @@ def test_access_overall_is_the_worst_result(client):
     results = {z["zone"]["name"]: z["result"] for z in body["zones"]}
     assert results == {"LEZ Utrecht": "not_allowed", "ZE Utrecht": "allowed"}
     assert body["result"] == "not_allowed"
+
+
+def test_access_feed_caveat(client):
+    body = client.get("/access", params={"kenteken": "G313XB", "zone": "Delft"}).json()
+    [zone] = body["zones"]
+    assert zone["zone"]["name"] == "LEZ Delft"
+    assert zone["result"] == "not_allowed"
+    assert zone["feed_caveat"].startswith(
+        "The NDW feed applies this zone to every diesel vehicle"
+    )
+    assert "(N2, N3), not this vehicle's category M1" in zone["feed_caveat"]
+    body = client.get(
+        "/access", params={"kenteken": "G313XB", "zone": "Amsterdam"}
+    ).json()
+    assert [z["feed_caveat"] for z in body["zones"]] == [None, None]
 
 
 def test_access_by_zone_name(client):

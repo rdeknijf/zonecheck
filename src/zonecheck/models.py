@@ -76,6 +76,7 @@ class ZoneAccess(BaseModel):
     allowed_until: datetime | None
     deciding_conditions: list[DecidingCondition]
     rule_readable: list[str]
+    feed_caveat: str | None
 
 
 class AccessResponse(BaseModel):
