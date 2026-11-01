@@ -11,7 +11,7 @@ never turn into ``allowed`` by default.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING, Literal
 
@@ -58,6 +58,7 @@ def k_or(values: list[Tri]) -> Tri:
 _COMBUSTION = {"Benzine", "Diesel", "LPG", "CNG", "LNG", "Alcohol"}
 _KNOWN_FUELS = _COMBUSTION | {"Elektriciteit", "Waterstof"}
 _ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6}
+_CATEGORY = re.compile(r"[A-Z]\d?")
 _LEVEL = re.compile(r"EURO ([0-6]|VI|IV|V|I{1,3})(?: [A-Z]{1,2})?")
 
 # RDW "inrichting" values that are the special-purpose body types the feed
@@ -239,8 +240,7 @@ def evaluate_characteristic(
             rdw = (vehicle.europese_voertuigcategorie or "").strip().upper()
             fact = f"RDW europese_voertuigcategorie: {rdw or None}"
             want = c.value.strip().upper()
-            pattern = r"[A-Z]\d?"
-            if not re.fullmatch(pattern, rdw) or not re.fullmatch(pattern, want):
+            if not _CATEGORY.fullmatch(rdw) or not _CATEGORY.fullmatch(want):
                 return None, fact
             if len(want) == 1:
                 return rdw[0] == want, fact
@@ -398,6 +398,7 @@ class ZoneDecision:
     deciding_conditions: tuple[LeafResult, ...]
     allowed_until: datetime | None
     rule_readable: tuple[str, ...]
+    feed_caveat: str | None = None
 
 
 _RESULT: dict[Tri, Result] = {True: "not_allowed", False: "allowed", None: "unknown"}
@@ -478,4 +479,103 @@ def decide(zone: Zone, vehicle: Vehicle | None, now: datetime) -> ZoneDecision:
         reason = "the restriction applies and no exemption in the feed matches"
     else:
         reason = "a fact or rule shape that decides the answer is unknown"
-    return ZoneDecision(_RESULT[value], reason, decisive, allowed_until, rule)
+    result = _RESULT[value]
+    return ZoneDecision(
+        result,
+        reason,
+        decisive,
+        allowed_until,
+        rule,
+        feed_scope_caveat(zone, vehicle, result),
+    )
+
+
+# --- Feed scope caveat ---------------------------------------------------------
+
+
+@dataclass
+class _ScopeFacts:
+    any_vehicle: bool = False
+    fuels: set[str] = field(default_factory=set)
+    exempt_categories: set[str] = field(default_factory=set)
+
+
+def _collect_scope(condition: Condition, negated: bool, facts: _ScopeFacts) -> None:
+    inside = negated ^ condition.negate
+    match condition:
+        case ConditionSet(children=children):
+            for child in children:
+                _collect_scope(child, inside, facts)
+        case VehicleCondition(characteristics=characteristics) if inside:
+            facts.exempt_categories.update(
+                c.value.strip().upper()
+                for c in characteristics
+                if c.kind == "euVehicleCategory"
+            )
+        case VehicleCondition(characteristics=characteristics):
+            if any(
+                c.kind == "vehicleType" and c.value == "anyVehicle"
+                for c in characteristics
+            ):
+                facts.any_vehicle = True
+                facts.fuels.update(
+                    c.value for c in characteristics if c.kind == "fuelType"
+                )
+
+
+def _references(feed_category: str, rdw_category: str) -> bool:
+    """True when a feed category names the RDW category, also loosely.
+
+    Feed ``M`` covers M1/M2/M3, and a bare RDW letter (``N``) counts as named
+    by a feed refinement (``N1``).
+    """
+    if not _CATEGORY.fullmatch(feed_category) or feed_category[0] != rdw_category[0]:
+        return False
+    return (
+        len(feed_category) == 1
+        or len(rdw_category) == 1
+        or feed_category == rdw_category
+    )
+
+
+def feed_scope_caveat(zone: Zone, vehicle: Vehicle, result: Result) -> str | None:
+    """Flag a verdict that may come from a feed scope wider than the rule.
+
+    Set when all of these hold:
+
+    - a noEntry scope condition (outside the exemptions) has vehicle type
+      ``anyVehicle``;
+    - the result is ``not_allowed`` or ``unknown``;
+    - the exemptions name at least one EU vehicle category, and none of them
+      names the vehicle's RDW category.
+
+    No caveat when the RDW category is missing or not a letter plus optional
+    digit: the text claims "other categories", which needs a known category.
+    The verdict itself never changes; the service does not correct the feed.
+    """
+    if result == "allowed":
+        return None
+    rdw = (vehicle.europese_voertuigcategorie or "").strip().upper()
+    if not _CATEGORY.fullmatch(rdw):
+        return None
+    facts = _ScopeFacts()
+    for regulation in zone.regulations:
+        if (
+            regulation.regulation_type == "AccessRestriction"
+            and regulation.restriction_type == "noEntry"
+            and regulation.condition is not None
+        ):
+            _collect_scope(regulation.condition, False, facts)
+    if not facts.any_vehicle or not facts.exempt_categories:
+        return None
+    if any(_references(c, rdw) for c in facts.exempt_categories):
+        return None
+    fuels = sorted(_FUEL_LABEL.get(f, f) for f in facts.fuels)
+    scope = f"every {fuels[0]} vehicle" if len(fuels) == 1 else "every vehicle"
+    named = ", ".join(sorted(facts.exempt_categories))
+    return (
+        f"The NDW feed applies this zone to {scope}, but its exemptions only "
+        f"name other vehicle categories ({named}), not this vehicle's "
+        f"category {rdw}. The municipal rule may be narrower. Check the "
+        "municipality's information."
+    )

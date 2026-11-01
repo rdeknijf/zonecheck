@@ -76,4 +76,12 @@ Encoded today: all 11 shapes. Every element in the current feed maps to an encod
 
 ## Feed scope wider than the exemption set
 
-Encoded as written, shapes 4, 9 and 10 make every diesel passenger car `not_allowed`, also a Euro 6 diesel car, in LEZ Breda 26072026, Milieuzone Maastricht, LEZ Delft, LEZ Rijswijk and LEZ Leiden (LEZ Breda has expired). Shape 11 (LEZ Haarlem) makes every diesel N1/N2/N3 vehicle `not_allowed`. The restriction has scope "diesel, any vehicle", and the exemptions mention only some categories. The municipal rules for these zones may be narrower (for example trucks only). The service does not correct the feed. This is a wrong `not_allowed` risk, not a wrong `allowed` risk; it needs a decision (see STATUS.md).
+Encoded as written, shapes 4, 9 and 10 make every diesel passenger car `not_allowed`, also a Euro 6 diesel car, in LEZ Breda 26072026, Milieuzone Maastricht, LEZ Delft, LEZ Rijswijk and LEZ Leiden (LEZ Breda has expired). Shape 11 (LEZ Haarlem) makes every diesel N1/N2/N3 vehicle `not_allowed`. The restriction has scope "diesel, any vehicle", and the exemptions mention only some categories. The municipal rules for these zones may be narrower (for example trucks only). This is a wrong `not_allowed` risk, not a wrong `allowed` risk.
+
+Decision (Rutger, 2026-11-01): flag these answers, do not correct the feed. Each zone result in `/access` has a `feed_caveat` field (string or `null`), and the front page shows it as a warning line on the zone card. The verdict itself does not change. `rules.feed_scope_caveat` sets it from the feed data, not from a zone list, when all of these hold:
+
+- A noEntry scope condition (outside the exemptions) has `vehicleType` `anyVehicle`.
+- The result is `not_allowed` or `unknown`.
+- The exemptions name at least one `euVehicleCategory`, and none of them names the vehicle's RDW `europese_voertuigcategorie`. Feed `m` names M1/M2/M3, and a bare RDW letter (`N`) counts as named by a feed refinement (`n2`).
+
+No caveat when the RDW category is missing or unparseable (the text says "other categories", which needs a known category), and no caveat when the exemptions name no category at all (a plain diesel ban). On the 2026-10-31 feed this flags M1 vehicles in 5 zones (Milieuzone Maastricht, LEZ Rijswijk, LEZ Breda 26072026, LEZ Leiden, LEZ Delft) and N1 vehicles in those 5 plus LEZ Haarlem. A vehicle in a category that no exemption names anywhere (for example a diesel tractor, category T) gets the caveat in every "diesel, any vehicle" zone where it is not allowed.

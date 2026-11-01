@@ -18,7 +18,7 @@ A wrong `allowed` can cost a user a fine. Every decision comes from the NDW XML 
 - `src/zonecheck/rules.py`: fact derivation and Kleene evaluation, deciding conditions, readable rule.
 - `src/zonecheck/main.py`: FastAPI app (`/health`, `/zones`, `/zones/{id}.geojson`, `/access`).
 - `docs/ndw-rules.md`: every rule shape in the feed with counts, and the encoding table.
-- `tests/fixtures/`: trimmed real feed (9 zones; the zone records are kept byte-for-byte) and recorded real RDW JSON (recorded 2026-11-01).
+- `tests/fixtures/`: trimmed real feed (11 zones; the zone records are kept byte-for-byte) and recorded real RDW JSON (recorded 2026-11-01).
 
 ## Stack
 

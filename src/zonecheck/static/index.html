@@ -44,6 +44,7 @@
     .zone h3 { margin: 0; font-size: 1.05rem; }
     .pill { padding: 3px 10px; border-radius: 999px; font-size: .82rem; font-weight: 750; }
     .zone p { margin: 8px 0 0; }
+    .zone p.caveat { padding: 8px 12px; border-left: 4px solid var(--unk); border-radius: 6px; color: var(--unk); background: var(--unk-bg); font-size: .92rem; }
     details { margin-top: 8px; } summary { cursor: pointer; }
     .zone ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
     .meta { color: var(--muted); font-size: .85rem; }
@@ -164,6 +165,7 @@
       let reason = z.reason ? z.reason.charAt(0).toUpperCase() + z.reason.slice(1) + '.' : '';
       if (z.allowed_until) reason = `Allowed by a time-limited exemption that ends on ${moment(z.allowed_until)} (Dutch time).`;
       if (reason) card.append(el('p', '', reason));
+      if (z.feed_caveat) card.append(el('p', 'caveat', `Note: ${z.feed_caveat}`));
       const conditions = (z.deciding_conditions || []).filter(c => c.readable && !/^valid from|inside the zone area/.test(c.readable));
       const line = c => c.vehicle_fact ? `${c.readable} (vehicle: ${c.vehicle_fact.replace(/^RDW [a-z_]+: /, '')})` : c.readable;
       const matching = conditions.filter(c => c.value === true);
