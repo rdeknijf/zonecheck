@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "zonecheck",
+  "project_id": "c733f930-786b-422d-a6e5-f4b60e9d5c6f"
+}

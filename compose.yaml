@@ -1,7 +1,7 @@
 services:
   api:
     build: .
-    container_name: ndw-zones-api
+    container_name: zonecheck
     restart: unless-stopped
     environment:
       CACHE_DIR: /data/cache

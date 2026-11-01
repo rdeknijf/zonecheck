@@ -4,7 +4,7 @@ Attention: focus
 
 ## Goal
 
-A free public JSON API that answers "can licence plate X enter Dutch low- or zero-emission zone Y?" from NDW plus RDW open data. V1 runs locally only: no name, no repository remote, no deployment.
+A free public JSON API that answers "can licence plate X enter Dutch low- or zero-emission zone Y?" from NDW plus RDW open data. Name and domain chosen by Rutger on 2026-11-01: `zonecheck`, https://zonecheck.deknijf.com. Public repo `rdeknijf/zonecheck`; deploy through square `context/zonecheck/` (k3s on Buckland).
 
 ## Verified state (2026-11-01)
 
@@ -17,16 +17,14 @@ A free public JSON API that answers "can licence plate X enter Dutch low- or zer
 
 ```sh
 uv sync
-uv run uvicorn ndw_zones.main:app --port 8011
+uv run uvicorn zonecheck.main:app --port 8011
 curl "http://127.0.0.1:8011/access?kenteken=27-GH-TF&zone=Amsterdam"
 ```
 
 ## Open decisions (Rutger)
 
-- Project name, and with it the package name (`ndw_zones` is a placeholder), repository and domain.
-- Feed scope wider than the exemption set: the feed makes every diesel passenger car `not_allowed` in LEZ Breda 26072026, Milieuzone Maastricht, LEZ Delft, LEZ Rijswijk and LEZ Leiden, and every diesel N-category vehicle `not_allowed` in LEZ Haarlem. The service follows the feed. Options: keep it, flag these zones in the answer, or report the data to NDW.
-- Whether to add beads (`bd init`) for this project. Not done, so no task list exists yet.
+- Feed scope wider than the exemption set: the feed makes every diesel passenger car `not_allowed` in LEZ Breda 26072026, Milieuzone Maastricht, LEZ Delft, LEZ Rijswijk and LEZ Leiden, and every diesel N-category vehicle `not_allowed` in LEZ Haarlem. The service follows the feed. Options: keep it, flag these zones in the answer, or report the data to NDW. Decision is with Rutger (Muninn bead muninn-o6y); work bead zonecheck-0qu.
 
 ## Resume path
 
-Read `AGENTS.md`, then `docs/ndw-rules.md`. Run `uv run pytest`. Check the live feed with the run commands above.
+Read `AGENTS.md`, then `docs/ndw-rules.md`. Run `bd ready` for open work. Run `uv run pytest`. Check the live feed with the run commands above.

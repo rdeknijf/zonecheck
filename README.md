@@ -1,6 +1,6 @@
-Project name pending (Rutger picks it); working directory name is a placeholder.
+# zonecheck
 
-# Dutch emission-zone access API
+Live at https://zonecheck.deknijf.com. Dutch emission-zone access API.
 
 Answers "can licence plate X enter Dutch low- or zero-emission zone Y?" from the NDW emission-zone feed (`https://opendata.ndw.nu/emissiezones.xml.gz`, CC0) and RDW open data (public domain). Every answer is `allowed`, `not_allowed` or `unknown`, with the deciding NDW conditions (raw XML and readable), the RDW facts used, the feed timestamp and a disclaimer. Informational only; check the municipality.
 
@@ -15,7 +15,7 @@ Answers "can licence plate X enter Dutch low- or zero-emission zone Y?" from the
 
 ```sh
 uv sync
-uv run uvicorn ndw_zones.main:app --port 8011
+uv run uvicorn zonecheck.main:app --port 8011
 docker compose up -d --build   # http://127.0.0.1:8011
 ```
 

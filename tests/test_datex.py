@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from ndw_zones.datex import (
+from zonecheck.datex import (
     ConditionSet,
     FeedFormatError,
     LocationCondition,

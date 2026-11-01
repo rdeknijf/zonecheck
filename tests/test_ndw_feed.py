@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from ndw_zones import ndw_feed
+from zonecheck import ndw_feed
 
 URL = "https://opendata.ndw.nu/emissiezones.xml.gz"
 T1 = datetime(2026, 11, 1, 6, 0, tzinfo=UTC)

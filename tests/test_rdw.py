@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from conftest import rdw_transport
-from ndw_zones.rdw import (
+from zonecheck.rdw import (
     InvalidKentekenError,
     RdwClient,
     RdwError,

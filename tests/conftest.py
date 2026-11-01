@@ -10,10 +10,10 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from ndw_zones.datex import ZoneFeed, parse_zone_feed
-from ndw_zones.main import ZoneStore, create_app
-from ndw_zones.ndw_feed import FeedSnapshot
-from ndw_zones.rdw import RdwClient, Vehicle, vehicle_from_rows
+from zonecheck.datex import ZoneFeed, parse_zone_feed
+from zonecheck.main import ZoneStore, create_app
+from zonecheck.ndw_feed import FeedSnapshot
+from zonecheck.rdw import RdwClient, Vehicle, vehicle_from_rows
 
 FIXTURES = Path(__file__).parent / "fixtures"
 ZONES_XML = FIXTURES / "emissiezones-trimmed.xml"

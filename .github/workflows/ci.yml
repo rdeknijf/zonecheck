@@ -1,0 +1,41 @@
+name: ci
+
+# The checks a pull request must pass before it merges: the same prek hooks
+# that run locally on commit, then the test suite. Merges go through
+# gh-merge-guarded, which refuses a PR with zero checks, so this workflow is
+# what makes a PR mergeable at all. The release image build is build.yml.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      - name: Install the locked environment
+        run: uv sync --locked
+
+      - name: prek hooks
+        env:
+          # beads-export needs bd and the beads server; it is a local-only hook.
+          SKIP: beads-export
+        run: uv run prek run --all-files --show-diff-on-failure
+
+      - name: Tests
+        run: uv run pytest
+
+      - name: Dependency audit
+        run: uv audit --locked

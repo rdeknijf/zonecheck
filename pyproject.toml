@@ -1,5 +1,5 @@
 [project]
-name = "ndw-zones"
+name = "zonecheck"
 version = "0.1.0"
 description = "Can licence plate X enter Dutch low- or zero-emission zone Y? NDW plus RDW open data as a JSON API"
 readme = "README.md"

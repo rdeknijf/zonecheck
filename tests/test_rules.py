@@ -5,9 +5,9 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from ndw_zones.datex import Characteristic, parse_zone_feed
-from ndw_zones.rdw import Fuel, Vehicle
-from ndw_zones.rules import (
+from zonecheck.datex import Characteristic, parse_zone_feed
+from zonecheck.rdw import Fuel, Vehicle
+from zonecheck.rules import (
     decide,
     euro_class,
     evaluate_characteristic,

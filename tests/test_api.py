@@ -6,10 +6,10 @@ import httpx
 from fastapi.testclient import TestClient
 
 from conftest import NOW, snapshot_of
-from ndw_zones.datex import parse_zone_feed
-from ndw_zones.main import ZoneStore, create_app, match_zones
-from ndw_zones.ndw_feed import FeedError
-from ndw_zones.rdw import RdwClient
+from zonecheck.datex import parse_zone_feed
+from zonecheck.main import ZoneStore, create_app, match_zones
+from zonecheck.ndw_feed import FeedError
+from zonecheck.rdw import RdwClient
 
 AMSTERDAM_LEZ = "NDW11_acbf0f7f-56a6-4b36-9a66-4b6d0c69d474"
 
