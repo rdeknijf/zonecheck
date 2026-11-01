@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Check if a Dutch licence plate can enter a low-emission zone (milieuzone) or zero-emission zone. Free JSON API on NDW and RDW open data.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f5c400'/%3E%3Crect width='9' height='32' rx='3' fill='%23003399'/%3E%3C/svg%3E">
+  <title>zonecheck: can this vehicle enter the zone?</title>
+  <style>
+    :root { --ink: #16202a; --muted: #5f6b76; --line: #d8dee4; --paper: #f6f8fa; --card: #fff; --blue: #1d4ed8; --plate: #f5c400; --eu: #003399; --ok: #17723f; --ok-bg: #e2f4e8; --no: #a12a2a; --no-bg: #fbe6e6; --unk: #8a5a00; --unk-bg: #fdf1d6; }
+    * { box-sizing: border-box; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font: 16px/1.55 system-ui, sans-serif; }
+    main { width: min(1000px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 64px 0 36px; max-width: 760px; }
+    .eyebrow { color: var(--blue); font-size: .8rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 10px 0 18px; font-size: clamp(2.3rem, 6.5vw, 4.8rem); letter-spacing: -.06em; line-height: 1; }
+    h2 { margin: 0 0 16px; font-size: 1.4rem; letter-spacing: -.02em; }
+    header p { max-width: 640px; margin: 0; color: var(--muted); font-size: 1.12rem; }
+    section { margin: 0 0 48px; }
+    .card { border: 1px solid var(--line); border-radius: 14px; background: var(--card); padding: 20px; }
+    form.check { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: .85rem; font-weight: 650; }
+    .plate { display: flex; height: 54px; border: 2px solid #111; border-radius: 8px; overflow: hidden; background: var(--plate); }
+    .plate .eu { display: flex; width: 34px; flex: none; align-items: flex-end; justify-content: center; padding-bottom: 6px; color: #fff; background: var(--eu); font-size: .8rem; font-weight: 800; }
+    .plate input { width: 100%; min-width: 0; border: 0; padding: 0 12px; color: #111; background: transparent; font: 800 1.55rem/1 ui-monospace, "DejaVu Sans Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+    select { width: 100%; height: 54px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; color: var(--ink); background: #fff; font: inherit; }
+    button { border: 0; border-radius: 8px; cursor: pointer; font: inherit; }
+    form.check button { height: 54px; padding: 0 22px; color: #fff; background: var(--blue); font-weight: 700; }
+    form.check button[disabled] { opacity: .6; cursor: progress; }
+    input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #93b4ff; outline-offset: 2px; }
+    .plate:focus-within { outline: 3px solid #93b4ff; outline-offset: 2px; }
+    #result { margin-top: 18px; }
+    .verdict { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 12px; font-weight: 750; font-size: 1.2rem; }
+    .verdict .icon { font-size: 1.6rem; line-height: 1; }
+    .allowed { color: var(--ok); background: var(--ok-bg); }
+    .not_allowed { color: var(--no); background: var(--no-bg); }
+    .unknown { color: var(--unk); background: var(--unk-bg); }
+    .vehicle { margin: 14px 0 4px; color: var(--muted); }
+    .vehicle strong { color: var(--ink); }
+    .zones { display: grid; gap: 12px; margin-top: 14px; }
+    .zone { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: #fff; }
+    .zone-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    .zone h3 { margin: 0; font-size: 1.05rem; }
+    .pill { padding: 3px 10px; border-radius: 999px; font-size: .82rem; font-weight: 750; }
+    .zone p { margin: 8px 0 0; }
+    details { margin-top: 8px; } summary { cursor: pointer; }
+    .zone ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
+    .meta { color: var(--muted); font-size: .85rem; }
+    .error { color: var(--no); }
+    .disclaimer { margin-top: 14px; color: var(--muted); font-size: .85rem; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat .num { display: block; font-size: 2rem; font-weight: 750; letter-spacing: -.04em; }
+    .examples { display: grid; gap: 12px; }
+    .example { position: relative; padding: 0; overflow: hidden; }
+    .example pre { margin: 0; padding: 18px; padding-right: 84px; white-space: pre-wrap; overflow-wrap: anywhere; color: #e6edf6; background: #1b2430; font: .82rem/1.5 ui-monospace, monospace; }
+    .copy { position: absolute; top: 12px; right: 12px; padding: 5px 9px; color: var(--ink); background: #dbe6ff; font-size: .8rem; }
+    a { color: var(--blue); font-weight: 650; }
+    footer { padding: 6px 0 56px; color: var(--muted); font-size: .9rem; }
+    footer p { max-width: 760px; }
+    @media (max-width: 760px) { header { padding-top: 40px; } form.check { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Free, open data</div>
+      <h1>Can this vehicle enter the zone?</h1>
+      <p>Type a Dutch licence plate and pick a city. zonecheck reads the official NDW emission-zone rules and the RDW vehicle record, and tells you if the vehicle can enter the low-emission zone (milieuzone) or zero-emission zone.</p>
+    </header>
+
+    <section aria-labelledby="check-title">
+      <h2 id="check-title" class="sr-only">Check a licence plate</h2>
+      <div class="card">
+        <form class="check" id="check-form">
+          <div>
+            <label for="kenteken">Licence plate (kenteken)</label>
+            <div class="plate"><span class="eu" aria-hidden="true">NL</span><input id="kenteken" name="kenteken" placeholder="AB-123-C" required autocomplete="off" spellcheck="false" maxlength="10"></div>
+          </div>
+          <div>
+            <label for="zone">City or zone</label>
+            <select id="zone" name="zone" required><option value="">Loading zones...</option></select>
+          </div>
+          <button type="submit" id="check-button">Check</button>
+        </form>
+        <div id="result" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="coverage-title">
+      <h2 id="coverage-title">Coverage</h2>
+      <div class="stats" id="stats" aria-live="polite">
+        <div class="card stat"><span class="meta">Loading current data...</span></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="api-title">
+      <h2 id="api-title">Use the API</h2>
+      <div class="examples">
+        <div class="card example"><button class="copy" type="button" data-path="/access?kenteken=AB-123-C&amp;zone=Amsterdam">Copy</button><pre><code>curl '/access?kenteken=AB-123-C&amp;zone=Amsterdam'</code></pre></div>
+        <div class="card example"><button class="copy" type="button" data-path="/zones">Copy</button><pre><code>curl /zones</code></pre></div>
+      </div>
+      <p class="meta">Every answer is <code>allowed</code>, <code>not_allowed</code> or <code>unknown</code>, with the deciding rule conditions, the vehicle facts used and the feed timestamp. Full reference: <a href="/docs">API documentation</a>.</p>
+    </section>
+
+    <footer>
+      <p><a href="/docs">API documentation</a> · <a href="https://github.com/rdeknijf/zonecheck" rel="noreferrer">Source on GitHub</a> · <a href="https://opendata.ndw.nu/" rel="noreferrer">NDW open data</a> · <a href="https://opendata.rdw.nl/" rel="noreferrer">RDW open data</a></p>
+      <p>Independent service, not affiliated with NDW, RDW or any municipality. Informational only: the source data can be incomplete or out of date. Check the rules of the municipality before you drive into a zone. No liability for fines.</p>
+    </footer>
+  </main>
+  <script>
+    const form = document.querySelector('#check-form');
+    const plate = document.querySelector('#kenteken');
+    const zoneSelect = document.querySelector('#zone');
+    const result = document.querySelector('#result');
+    const button = document.querySelector('#check-button');
+    const stats = document.querySelector('#stats');
+    const LABEL = { allowed: 'Allowed', not_allowed: 'Not allowed', unknown: 'Unknown' };
+    const ICON = { allowed: '✓', not_allowed: '✕', unknown: '?' };
+    const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+    const DAY = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Amsterdam' };
+    const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', DAY) : '';
+    // The exact end moment in Dutch time: the feed mixes local and UTC midnight.
+    const moment = iso => new Date(iso).toLocaleString('en-GB', { ...DAY, hour: '2-digit', minute: '2-digit' });
+    // The feed's info URL can lack a scheme ("www.eindhoven.nl"); only http(s) links are made.
+    const safeUrl = raw => { const v = (raw || '').trim(); if (/^https?:\/\//i.test(v)) return v; if (/^www\./i.test(v)) return `https://${v}`; return null; };
+    const showError = message => { result.replaceChildren(el('p', 'error', message)); };
+
+    async function loadZones() {
+      try {
+        const response = await fetch('/zones');
+        if (!response.ok) throw new Error('The zone data is unavailable right now.');
+        const data = await response.json();
+        const cities = new Map();
+        data.zones.forEach(z => { const key = z.city || z.name; cities.set(key, (cities.get(key) || 0) + 1); });
+        const names = [...cities.keys()].sort((a, b) => a.replace(/^'s-/, '').localeCompare(b.replace(/^'s-/, ''), 'nl'));
+        zoneSelect.replaceChildren(el('option', '', 'Pick a city'));
+        zoneSelect.firstChild.value = '';
+        names.forEach(name => { const o = el('option', '', cities.get(name) > 1 ? `${name} (${cities.get(name)} zones)` : name); o.value = name; zoneSelect.append(o); });
+        stats.replaceChildren();
+        [[data.count, 'zones'], [cities.size, 'cities'], [day(data.feed.publication_time) || 'Unknown', 'NDW feed published']].forEach(([num, label]) => {
+          const card = el('div', 'card stat'); card.append(el('span', 'num', String(num)), el('span', 'meta', label)); stats.append(card);
+        });
+      } catch (error) {
+        zoneSelect.replaceChildren(el('option', '', 'Zones unavailable'));
+        stats.replaceChildren(el('p', 'error', error.message));
+      }
+    }
+
+    function vehicleLine(v) {
+      const p = el('p', 'vehicle');
+      if (!v || !v.found) { p.textContent = 'RDW has no vehicle record for this licence plate.'; return p; }
+      const fuel = (v.fuels || []).map(f => f.brandstof_omschrijving).filter(Boolean).join(' + ');
+      const parts = [fuel, v.euro_class != null ? `Euro ${v.euro_class}` : 'Euro class unknown', v.europese_voertuigcategorie, v.datum_eerste_toelating ? `first registered ${day(v.datum_eerste_toelating)}` : ''].filter(Boolean);
+      p.append(el('strong', '', [v.merk, v.handelsbenaming].filter(Boolean).join(' ') || v.kenteken), document.createTextNode(` · ${parts.join(' · ')}`));
+      return p;
+    }
+
+    function zoneCard(z) {
+      const card = el('article', 'zone');
+      const head = el('div', 'zone-head');
+      head.append(el('h3', '', z.zone.name), el('span', `pill ${z.result}`, LABEL[z.result] || z.result));
+      card.append(head);
+      let reason = z.reason ? z.reason.charAt(0).toUpperCase() + z.reason.slice(1) + '.' : '';
+      if (z.allowed_until) reason = `Allowed by a time-limited exemption that ends on ${moment(z.allowed_until)} (Dutch time).`;
+      if (reason) card.append(el('p', '', reason));
+      const conditions = (z.deciding_conditions || []).filter(c => c.readable && !/^valid from|inside the zone area/.test(c.readable));
+      const line = c => c.vehicle_fact ? `${c.readable} (vehicle: ${c.vehicle_fact.replace(/^RDW [a-z_]+: /, '')})` : c.readable;
+      const matching = conditions.filter(c => c.value === true);
+      if (matching.length) {
+        const ul = el('ul');
+        matching.forEach(c => ul.append(el('li', '', line(c))));
+        card.append(ul);
+      }
+      if (conditions.length > matching.length) {
+        const details = el('details', 'meta');
+        details.append(el('summary', '', 'All checked conditions'));
+        const ul = el('ul');
+        conditions.forEach(c => ul.append(el('li', '', `${c.value === true ? 'Yes' : c.value === false ? 'No' : 'Unknown'}: ${line(c)}`)));
+        details.append(ul);
+        card.append(details);
+      }
+      const meta = el('p', 'meta');
+      if (z.zone.valid_from) meta.append(document.createTextNode(`Zone rules valid from ${day(z.zone.valid_from)}. `));
+      const info = safeUrl(z.zone.info_url);
+      if (info) { const a = el('a', '', 'Municipality information'); a.href = info; a.rel = 'noreferrer'; meta.append(a); }
+      card.append(meta);
+      return card;
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const kenteken = plate.value.trim();
+      const zone = zoneSelect.value;
+      if (!kenteken || !zone) return;
+      button.disabled = true; button.textContent = 'Checking...';
+      result.replaceChildren(el('p', 'meta', 'Reading the RDW record and the zone rules...'));
+      try {
+        const response = await fetch(`/access?kenteken=${encodeURIComponent(kenteken)}&zone=${encodeURIComponent(zone)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail.replace(/^not a registration number/, 'Not a valid licence plate') : 'The check failed. Try again later.');
+        const verdict = el('div', `verdict ${data.result}`);
+        const n = data.zones.length;
+        const text = { allowed: n > 1 ? `Allowed in all ${n} zones of ${zone}` : `Allowed in ${data.zones[0].zone.name}`, not_allowed: n > 1 ? `Not allowed in at least one zone of ${zone}` : `Not allowed in ${data.zones[0].zone.name}`, unknown: `Cannot say for sure; check the municipality` }[data.result];
+        verdict.append(el('span', 'icon', ICON[data.result]), el('span', '', `${data.kenteken}: ${text}`));
+        const list = el('div', 'zones');
+        data.zones.forEach(z => list.append(zoneCard(z)));
+        result.replaceChildren(verdict, vehicleLine(data.vehicle), list, el('p', 'disclaimer', data.disclaimer));
+      } catch (error) { showError(error.message); }
+      finally { button.disabled = false; button.textContent = 'Check'; }
+    });
+
+    document.querySelectorAll('[data-path]').forEach(copy => {
+      const command = `curl '${location.origin}${copy.dataset.path}'`;
+      copy.parentElement.querySelector('code').textContent = command;
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(command); copy.textContent = 'Copied'; } catch { copy.textContent = 'Select text'; }
+        setTimeout(() => { copy.textContent = 'Copy'; }, 1500);
+      });
+    });
+    loadZones();
+  </script>
+</body>
+</html>

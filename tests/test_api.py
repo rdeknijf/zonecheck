@@ -198,3 +198,11 @@ def test_match_zones_alias_den_haag(zones_xml):
         "LEZ Rotterdam Maasvlakte",
         "ZE Rotterdam",
     ]
+
+
+def test_front_page(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Can this vehicle enter the zone?" in response.text
+    assert 'fetch("/zones")' in response.text or "fetch('/zones')" in response.text

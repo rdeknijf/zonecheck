@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from . import ndw_feed
 from .datex import Zone, ZoneFeed, parse_zone_feed
@@ -166,7 +166,7 @@ def create_app(
     zone_store = store or _default_store()
     rdw_client = rdw or RdwClient()
     app = FastAPI(
-        title="Dutch emission-zone access (working name)",
+        title="zonecheck",
         version="0.1.0",
         description=(
             "Can licence plate X enter Dutch low- or zero-emission zone Y? "
@@ -180,6 +180,12 @@ def create_app(
             return zone_store.get()
         except (ndw_feed.FeedError, ValueError) as exc:
             raise HTTPException(503, f"emission-zone feed unavailable: {exc}") from exc
+
+    index_html = Path(__file__).with_name("static").joinpath("index.html").read_text()
+
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    def index() -> str:
+        return index_html
 
     @app.get("/health", response_model=Health)
     def health() -> Health | JSONResponse:
