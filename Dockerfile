@@ -1,6 +1,6 @@
 FROM debian:trixie-slim
 
-COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /bin/
 
 # uv installs the Python version that .python-version pins, outside /root so
 # the app user can run it.
